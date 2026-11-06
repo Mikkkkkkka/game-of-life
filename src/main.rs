@@ -1,7 +1,7 @@
 mod configuration;
 mod game_of_life;
 
-use std::env;
+// use std::env;
 
 fn main() {
     println!("-- Game of life! --");

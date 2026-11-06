@@ -22,17 +22,30 @@ impl GameFrame {
         let width = self.get_width();
         let height = self.get_height();
         let mut next_frame = GameFrame::empty(width, height);
-        for i in 0..width {
-            for j in 0..height {
-                let new_state = self.observe_cell(i, j);
-                next_frame.set_cell(new_state, i, j);
+        for x in 0..width as i32 {
+            for y in 0..height as i32 {
+                let cell = self.observe_cell(x, y).expect("coordinates came from self");
+                next_frame.set_cell_at(x, y, cell);
             }
         }
         next_frame
     }
 
-    pub fn set_cell(&mut self, cell: Cell, x: usize, y: usize) {
-        self.cells[x][y] = cell;
+    pub fn get_cell_at(&self, x: i32, y: i32) -> Option<&Cell> {
+        let x = usize::try_from(x).ok()?;
+        let y = usize::try_from(y).ok()?;
+        self.cells.get(x)?.get(y)
+    }
+
+    pub fn set_cell_at(&mut self, x: i32, y: i32, cell: Cell) -> Option<()> {
+        let x = usize::try_from(x).ok()?;
+        let y = usize::try_from(y).ok()?;
+        if x >= self.get_width() || y >= self.get_height() {
+            None
+        } else {
+            self.cells[x][y] = cell;
+            Some(())
+        }
     }
 
     fn get_width(&self) -> usize {
@@ -43,42 +56,25 @@ impl GameFrame {
         self.cells.first().map_or(0, Vec::len)
     }
 
-    fn observe_cell(&self, x: usize, y: usize) -> Cell {
-        let current = &self.cells[x][y];
-        let mut count = 0;
-        for i in 0..3 {
-            for j in 0..3 {
-                if i == 1 && j == 1 {
-                    continue;
-                }
-                let maybe_row = x
-                    .checked_add(i)
-                    .and_then(|coordinate| coordinate.checked_sub(1))
-                    .and_then(|coordinate| self.cells.get(coordinate));
-                match maybe_row {
-                    None => continue,
-                    Some(row) => {
-                        let maybe_cell = y
-                            .checked_add(j)
-                            .and_then(|coordinate| coordinate.checked_sub(1))
-                            .and_then(|coordinate| row.get(coordinate));
-                        match maybe_cell {
-                            None => continue,
-                            Some(cell) => match cell {
-                                Cell::Dead => continue,
-                                Cell::Alive => count += 1,
-                            },
-                        }
-                    }
-                }
-            }
-        }
+    fn observe_cell(&self, x: i32, y: i32) -> Option<Cell> {
+        use Cell::{Alive, Dead};
+        let current = self.get_cell_at(x, y)?;
+        let count = (0..3)
+            .flat_map(|i| {
+                (0..3)
+                    .map(move |j| {
+                        self.get_cell_at(x - 1 + i, y - 1 + j)
+                            .filter(|_| i != 1 || j != 1)
+                    })
+                    .filter(|cell| match cell {
+                        Some(Alive) => true,
+                        _ => false,
+                    })
+            })
+            .count();
         match (current, count) {
-            (Cell::Alive, ..2) => Cell::Dead,
-            (Cell::Alive, 2..4) => Cell::Alive,
-            (Cell::Alive, 4..) => Cell::Dead,
-            (Cell::Dead, 3) => Cell::Alive,
-            _ => Cell::Dead,
+            (Alive, 2..=3) | (Dead, 3) => Some(Alive),
+            _ => Some(Dead),
         }
     }
 }

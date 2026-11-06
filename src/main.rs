@@ -9,16 +9,18 @@ fn main() {
     // let args: Vec<String> = env::args().collect();
     // let config = configuration::Config::new(args);
 
-    let mut frame = game_of_life::GameFrame::empty(10, 10);
-    println!("{}", frame);
-    println!("---");
-    frame.set_cell(game_of_life::Cell::Alive, 5, 4);
-    frame.set_cell(game_of_life::Cell::Alive, 5, 5);
-    frame.set_cell(game_of_life::Cell::Alive, 5, 6);
-    println!("original:\n{}", frame);
-    for i in 0..3 {
+    {
+        use game_of_life::{Cell, GameFrame};
+        let mut frame = GameFrame::empty(64, 36);
         println!("---");
-        frame = frame.next();
-        println!("step {i}:\n{}", frame);
+        frame.set_cell_at(5, 4, Cell::Alive);
+        frame.set_cell_at(5, 5, Cell::Alive);
+        frame.set_cell_at(5, 6, Cell::Alive);
+        println!("original:\n{}", frame);
+        for i in 1..6 {
+            println!("---");
+            frame = frame.next();
+            println!("step {i}:\n{frame}");
+        }
     }
 }

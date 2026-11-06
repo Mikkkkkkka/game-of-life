@@ -18,17 +18,24 @@ impl GameFrame {
         }
     }
 
-    pub fn next(&self) -> GameFrame {
-        let width = self.get_width();
-        let height = self.get_height();
-        let mut next_frame = GameFrame::empty(width, height);
-        for x in 0..width as i32 {
-            for y in 0..height as i32 {
-                let cell = self.observe_cell(x, y).expect("coordinates came from self");
-                next_frame.set_cell_at(x, y, cell);
-            }
+    pub fn next(&self) -> Self {
+        Self {
+            cells: self
+                .cells
+                .iter()
+                .enumerate()
+                .map(|(x, column)| {
+                    column
+                        .iter()
+                        .enumerate()
+                        .map(|(y, _)| {
+                            self.observe_cell(x as i32, y as i32)
+                                .expect("coordinates came from self")
+                        })
+                        .collect()
+                })
+                .collect(),
         }
-        next_frame
     }
 
     pub fn get_cell_at(&self, x: i32, y: i32) -> Option<&Cell> {
